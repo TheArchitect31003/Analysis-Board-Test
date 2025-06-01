@@ -1,0 +1,206 @@
+# HYPERION IX - Revolutionary Chess Intelligence Platform
+
+> The most advanced chess analysis platform on Earth, featuring custom split-gradient pieces and revolutionary UTII-powered analysis.
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js 16+ 
+- npm or yarn
+
+### Installation
+
+1. **Clone the repository**
+```bash
+git clone https://github.com/yourusername/hyperion-ix-chess.git
+cd hyperion-ix-chess
+```
+
+2. **Install dependencies**
+```bash
+npm install
+# or
+yarn install
+```
+
+3. **Start the development server**
+```bash
+npm start
+# or
+yarn start
+```
+
+4. **Open your browser**
+Navigate to `http://localhost:3000` to see HYPERION IX in action!
+
+## ✨ Features
+
+### 🎨 Custom HYPERION IX Chess Pieces
+- **Split Gradient Design**: Each piece features a unique 50/50 gradient split
+- **Premium SVG Quality**: Crisp, scalable vector graphics
+- **Complete Piece Set**: Custom designs for all 6 piece types (King, Queen, Rook, Bishop, Knight, Pawn)
+- **Color Variants**: Professional Silver/White and Black/Graphite combinations
+
+### 🧠 Revolutionary Analysis Engine
+- **QuadCore Intelligence**: 4-engine analysis (Strategic, Tactical, Pattern, Adaptive)
+- **Sentium Validation**: Truth logic and confidence scoring
+- **Entropy Detection**: Real-time collapse risk assessment
+- **Live Evaluation**: Dynamic position analysis with depth and node count
+
+### 🎯 Professional Interface
+- **Dark Mode Excellence**: Sophisticated HYPERION IX color palette
+- **Premium Typography**: Inter font family with precise spacing
+- **Responsive Design**: Optimized for desktop and mobile
+- **Interactive Board**: Drag-and-drop piece movement with legal move highlighting
+
+## 🛠 Technology Stack
+
+- **React 18** - Modern UI framework
+- **chess.js** - Chess game logic and validation
+- **react-chessboard** - Interactive chess board component
+- **Custom SVG Components** - Hand-crafted HYPERION IX pieces
+
+## 📁 Project Structure
+
+```
+hyperion-ix-chess/
+├── public/
+│   ├── index.html
+│   └── favicon.ico
+├── src/
+│   ├── App.js          # Main HYPERION IX component
+│   ├── App.css         # Premium styling
+│   └── index.js        # React entry point
+├── package.json        # Dependencies and scripts
+└── README.md          # This file
+```
+
+## 🎮 How to Use
+
+### Making Moves
+- **Click to Move**: Click a piece, then click the destination square
+- **Drag and Drop**: Drag pieces directly to their destination
+- **Legal Moves**: Highlighted squares show all possible moves
+
+### Analysis Features
+- **Real-time Evaluation**: Engine analysis updates with each move
+- **QuadCore Consensus**: See breakdown from 4 different AI engines
+- **Move History**: Complete game notation with navigation controls
+- **Collapse Detection**: Advanced entropy analysis for position assessment
+
+### Board Customization
+- **Multiple Styles**: Choose between Hyperion Plasma, Carbon Fiber, and Classic themes
+- **Responsive Layout**: Automatic adaptation to screen size
+- **Professional Coordinates**: File and rank labels for reference
+
+## 🚀 Deployment
+
+### Build for Production
+```bash
+npm run build
+# or
+yarn build
+```
+
+### Deploy to GitHub Pages
+1. Install gh-pages:
+```bash
+npm install --save-dev gh-pages
+```
+
+2. Add to package.json:
+```json
+{
+  "homepage": "https://yourusername.github.io/hyperion-ix-chess",
+  "scripts": {
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
+  }
+}
+```
+
+3. Deploy:
+```bash
+npm run deploy
+```
+
+### Deploy to Vercel
+1. Install Vercel CLI:
+```bash
+npm i -g vercel
+```
+
+2. Deploy:
+```bash
+vercel --prod
+```
+
+## 🎨 Customization
+
+### Adding New Piece Designs
+The custom pieces are defined in `App.js` in the `HyperionPieces` object. Each piece is an SVG React component with:
+
+```javascript
+wB: ({ squareWidth }) => (
+  <div style={{ width: squareWidth, height: squareWidth }}>
+    <svg width={squareWidth * 0.8} height={squareWidth * 0.8} viewBox="0 0 64 64">
+      {/* Your custom SVG design here */}
+    </svg>
+  </div>
+)
+```
+
+### Modifying Colors
+Update the gradient definitions in each piece component:
+
+```javascript
+<linearGradient id="wBishopGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+  <stop offset="50%" stopColor="#A0A0A0" />  {/* Left half */}
+  <stop offset="50%" stopColor="#FFFFFF" />  {/* Right half */}
+</linearGradient>
+```
+
+### Styling Changes
+Modify `App.css` to customize:
+- Color scheme (CSS custom properties at the top)
+- Layout and spacing
+- Typography and fonts
+- Animation and transitions
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+1. **Pieces not rendering**
+   - Ensure all SVG gradients have unique IDs
+   - Check browser console for JavaScript errors
+
+2. **Board not responsive**
+   - Verify CSS grid layout in `.hyperion-main`
+   - Check viewport meta tag in `public/index.html`
+
+3. **Move validation errors**
+   - Ensure chess.js is properly imported
+   - Check that game state is being updated correctly
+
+### Performance Optimization
+
+- Use React DevTools to identify re-renders
+- Consider memoization for expensive SVG components
+- Optimize SVG complexity for better performance
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- **chess.js** - Excellent chess game logic library
+- **react-chessboard** - Solid foundation for chess UI
+- **Inter Font** - Beautiful typography from Google Fonts
+
+---
+
+**HYPERION IX** - Predict. Collapse. Dominate.
+
+*Built with ⚡ by the HYPERION IX team*
