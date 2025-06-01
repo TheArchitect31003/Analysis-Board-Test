@@ -13,679 +13,479 @@
             margin: 0;
             padding: 0;
             font-family: 'Inter', system-ui, sans-serif;
-            background-color: #0a0a0a;
-            color: #ffffff;
+            background-color: #000;
+            color: #fff;
         }
-        * {
-            box-sizing: border-box;
+        * { box-sizing: border-box; }
+        .chess-piece {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            user-select: none;
         }
     </style>
 </head>
 <body>
     <div id="root"></div>
-
     <script type="text/babel">
-        const { useState, useCallback, useMemo } = React;
+        const { useState, useCallback } = React;
 
-        const HyperionChess = () => {
-          // Initialize board with starting position
-          const initialBoard = [
-            ['bR', 'bN', 'bB', 'bQ', 'bK', 'bB', 'bN', 'bR'],
-            ['bP', 'bP', 'bP', 'bP', 'bP', 'bP', 'bP', 'bP'],
-            [null, null, null, null, null, null, null, null],
-            [null, null, null, null, null, null, null, null],
-            [null, null, null, null, null, null, null, null],
-            [null, null, null, null, null, null, null, null],
-            ['wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP'],
-            ['wR', 'wN', 'wB', 'wQ', 'wK', 'wB', 'wN', 'wR']
-          ];
-
-          const [board, setBoard] = useState(initialBoard);
-          const [currentPlayer, setCurrentPlayer] = useState('w');
-          const [selectedSquare, setSelectedSquare] = useState(null);
-          const [moveHistory, setMoveHistory] = useState([]);
-          const [boardOrientation, setBoardOrientation] = useState('white');
-          const [boardStyle, setBoardStyle] = useState('hyperion');
-          const [validMoves, setValidMoves] = useState([]);
-
-          // Custom HYPERION IX pieces with split gradients
-          const customPieces = useMemo(() => {
-            const pieceComponents = {};
-            
-            // White pieces (left side silver, right side white)
-            pieceComponents.wP = ({ size = 40 }) => (
-              React.createElement('svg', { width: size, height: size, viewBox: "0 0 64 64" },
-                React.createElement('defs', null,
-                  React.createElement('linearGradient', { id: "wPawnGrad" + Math.random(), x1: "0%", y1: "0%", x2: "100%", y2: "0%" },
-                    React.createElement('stop', { offset: "50%", stopColor: "#A0A0A0" }),
-                    React.createElement('stop', { offset: "50%", stopColor: "#FFFFFF" })
-                  )
-                ),
-                React.createElement('circle', { cx: "32", cy: "16", r: "8", fill: `url(#wPawnGrad${Math.random()})` }),
-                React.createElement('rect', { x: "28", y: "24", width: "8", height: "4", fill: `url(#wPawnGrad${Math.random()})` }),
-                React.createElement('path', { d: "M24 28 L40 28 L38 48 L26 48 Z", fill: `url(#wPawnGrad${Math.random()})` }),
-                React.createElement('rect', { x: "24", y: "48", width: "16", height: "4", fill: `url(#wPawnGrad${Math.random()})` })
-              )
-            );
-
-            // Simplified pieces for now - using solid colors to ensure rendering
-            pieceComponents.wR = ({ size = 40 }) => (
-              React.createElement('svg', { width: size, height: size, viewBox: "0 0 64 64" },
-                React.createElement('rect', { x: "20", y: "8", width: "6", height: "8", fill: "#FFFFFF" }),
-                React.createElement('rect', { x: "29", y: "8", width: "6", height: "8", fill: "#FFFFFF" }),
-                React.createElement('rect', { x: "38", y: "8", width: "6", height: "8", fill: "#FFFFFF" }),
-                React.createElement('rect', { x: "18", y: "16", width: "28", height: "6", fill: "#FFFFFF" }),
-                React.createElement('rect', { x: "20", y: "22", width: "24", height: "26", fill: "#FFFFFF" }),
-                React.createElement('rect', { x: "16", y: "48", width: "32", height: "6", fill: "#FFFFFF" })
-              )
-            );
-
-            pieceComponents.wN = ({ size = 40 }) => (
-              React.createElement('svg', { width: size, height: size, viewBox: "0 0 64 64" },
-                React.createElement('path', { d: "M20 48 Q20 32 28 24 Q32 20 36 20 Q40 16 44 20 Q48 24 46 28 Q44 32 40 36 Q36 40 32 44 Q28 48 20 48", fill: "#FFFFFF" }),
-                React.createElement('circle', { cx: "38", cy: "26", r: "2", fill: "#333" }),
-                React.createElement('path', { d: "M32 18 L36 14 L40 16 L38 20", fill: "#FFFFFF" }),
-                React.createElement('rect', { x: "18", y: "48", width: "28", height: "4", fill: "#FFFFFF" })
-              )
-            );
-
-            pieceComponents.wB = ({ size = 40 }) => (
-              React.createElement('svg', { width: size, height: size, viewBox: "0 0 64 64" },
-                React.createElement('circle', { cx: "32", cy: "12", r: "4", fill: "#FFFFFF" }),
-                React.createElement('path', { d: "M28 16 Q32 8 36 16 Q40 24 38 32 Q36 40 32 44 Q28 40 26 32 Q24 24 28 16", fill: "#FFFFFF" }),
-                React.createElement('rect', { x: "30", y: "20", width: "4", height: "8", fill: "#333" }),
-                React.createElement('rect', { x: "24", y: "44", width: "16", height: "4", fill: "#FFFFFF" }),
-                React.createElement('rect', { x: "20", y: "48", width: "24", height: "4", fill: "#FFFFFF" })
-              )
-            );
-
-            pieceComponents.wQ = ({ size = 40 }) => (
-              React.createElement('svg', { width: size, height: size, viewBox: "0 0 64 64" },
-                React.createElement('circle', { cx: "20", cy: "16", r: "3", fill: "#FFFFFF" }),
-                React.createElement('circle', { cx: "28", cy: "12", r: "3", fill: "#FFFFFF" }),
-                React.createElement('circle', { cx: "32", cy: "8", r: "4", fill: "#FFFFFF" }),
-                React.createElement('circle', { cx: "36", cy: "12", r: "3", fill: "#FFFFFF" }),
-                React.createElement('circle', { cx: "44", cy: "16", r: "3", fill: "#FFFFFF" }),
-                React.createElement('path', { d: "M18 18 L46 18 L42 40 L22 40 Z", fill: "#FFFFFF" }),
-                React.createElement('rect', { x: "20", y: "40", width: "24", height: "4", fill: "#FFFFFF" }),
-                React.createElement('rect', { x: "16", y: "44", width: "32", height: "6", fill: "#FFFFFF" })
-              )
-            );
-
-            pieceComponents.wK = ({ size = 40 }) => (
-              React.createElement('svg', { width: size, height: size, viewBox: "0 0 64 64" },
-                React.createElement('rect', { x: "30", y: "8", width: "4", height: "8", fill: "#FFFFFF" }),
-                React.createElement('rect', { x: "26", y: "12", width: "12", height: "4", fill: "#FFFFFF" }),
-                React.createElement('path', { d: "M24 16 Q32 12 40 16 Q42 24 40 32 Q36 40 32 42 Q28 40 24 32 Q22 24 24 16", fill: "#FFFFFF" }),
-                React.createElement('rect', { x: "28", y: "42", width: "8", height: "4", fill: "#FFFFFF" }),
-                React.createElement('rect', { x: "20", y: "46", width: "24", height: "6", fill: "#FFFFFF" })
-              )
-            );
-
-            // Black pieces
-            pieceComponents.bP = ({ size = 40 }) => (
-              React.createElement('svg', { width: size, height: size, viewBox: "0 0 64 64" },
-                React.createElement('circle', { cx: "32", cy: "16", r: "8", fill: "#1a1a1a" }),
-                React.createElement('rect', { x: "28", y: "24", width: "8", height: "4", fill: "#1a1a1a" }),
-                React.createElement('path', { d: "M24 28 L40 28 L38 48 L26 48 Z", fill: "#1a1a1a" }),
-                React.createElement('rect', { x: "24", y: "48", width: "16", height: "4", fill: "#1a1a1a" })
-              )
-            );
-
-            pieceComponents.bR = ({ size = 40 }) => (
-              React.createElement('svg', { width: size, height: size, viewBox: "0 0 64 64" },
-                React.createElement('rect', { x: "20", y: "8", width: "6", height: "8", fill: "#1a1a1a" }),
-                React.createElement('rect', { x: "29", y: "8", width: "6", height: "8", fill: "#1a1a1a" }),
-                React.createElement('rect', { x: "38", y: "8", width: "6", height: "8", fill: "#1a1a1a" }),
-                React.createElement('rect', { x: "18", y: "16", width: "28", height: "6", fill: "#1a1a1a" }),
-                React.createElement('rect', { x: "20", y: "22", width: "24", height: "26", fill: "#1a1a1a" }),
-                React.createElement('rect', { x: "16", y: "48", width: "32", height: "6", fill: "#1a1a1a" })
-              )
-            );
-
-            pieceComponents.bN = ({ size = 40 }) => (
-              React.createElement('svg', { width: size, height: size, viewBox: "0 0 64 64" },
-                React.createElement('path', { d: "M20 48 Q20 32 28 24 Q32 20 36 20 Q40 16 44 20 Q48 24 46 28 Q44 32 40 36 Q36 40 32 44 Q28 48 20 48", fill: "#1a1a1a" }),
-                React.createElement('circle', { cx: "38", cy: "26", r: "2", fill: "#ccc" }),
-                React.createElement('path', { d: "M32 18 L36 14 L40 16 L38 20", fill: "#1a1a1a" }),
-                React.createElement('rect', { x: "18", y: "48", width: "28", height: "4", fill: "#1a1a1a" })
-              )
-            );
-
-            pieceComponents.bB = ({ size = 40 }) => (
-              React.createElement('svg', { width: size, height: size, viewBox: "0 0 64 64" },
-                React.createElement('circle', { cx: "32", cy: "12", r: "4", fill: "#1a1a1a" }),
-                React.createElement('path', { d: "M28 16 Q32 8 36 16 Q40 24 38 32 Q36 40 32 44 Q28 40 26 32 Q24 24 28 16", fill: "#1a1a1a" }),
-                React.createElement('rect', { x: "30", y: "20", width: "4", height: "8", fill: "#ccc" }),
-                React.createElement('rect', { x: "24", y: "44", width: "16", height: "4", fill: "#1a1a1a" }),
-                React.createElement('rect', { x: "20", y: "48", width: "24", height: "4", fill: "#1a1a1a" })
-              )
-            );
-
-            pieceComponents.bQ = ({ size = 40 }) => (
-              React.createElement('svg', { width: size, height: size, viewBox: "0 0 64 64" },
-                React.createElement('circle', { cx: "20", cy: "16", r: "3", fill: "#1a1a1a" }),
-                React.createElement('circle', { cx: "28", cy: "12", r: "3", fill: "#1a1a1a" }),
-                React.createElement('circle', { cx: "32", cy: "8", r: "4", fill: "#1a1a1a" }),
-                React.createElement('circle', { cx: "36", cy: "12", r: "3", fill: "#1a1a1a" }),
-                React.createElement('circle', { cx: "44", cy: "16", r: "3", fill: "#1a1a1a" }),
-                React.createElement('path', { d: "M18 18 L46 18 L42 40 L22 40 Z", fill: "#1a1a1a" }),
-                React.createElement('rect', { x: "20", y: "40", width: "24", height: "4", fill: "#1a1a1a" }),
-                React.createElement('rect', { x: "16", y: "44", width: "32", height: "6", fill: "#1a1a1a" })
-              )
-            );
-
-            pieceComponents.bK = ({ size = 40 }) => (
-              React.createElement('svg', { width: size, height: size, viewBox: "0 0 64 64" },
-                React.createElement('rect', { x: "30", y: "8", width: "4", height: "8", fill: "#1a1a1a" }),
-                React.createElement('rect', { x: "26", y: "12", width: "12", height: "4", fill: "#1a1a1a" }),
-                React.createElement('path', { d: "M24 16 Q32 12 40 16 Q42 24 40 32 Q36 40 32 42 Q28 40 24 32 Q22 24 24 16", fill: "#1a1a1a" }),
-                React.createElement('rect', { x: "28", y: "42", width: "8", height: "4", fill: "#1a1a1a" }),
-                React.createElement('rect', { x: "20", y: "46", width: "24", height: "6", fill: "#1a1a1a" })
-              )
-            );
-
-            return pieceComponents;
-          }, []);
-
-          // Chess move validation logic
-          const isValidMove = useCallback((fromRow, fromCol, toRow, toCol, piece, board) => {
-            if (toRow < 0 || toRow > 7 || toCol < 0 || toCol > 7) return false;
-            
-            const targetPiece = board[toRow][toCol];
-            if (targetPiece && targetPiece[0] === piece[0]) return false; // Can't capture own piece
-            
-            const pieceType = piece[1];
-            const color = piece[0];
-            const rowDiff = Math.abs(toRow - fromRow);
-            const colDiff = Math.abs(toCol - fromCol);
-            
-            switch (pieceType) {
-              case 'P': // Pawn
-                const direction = color === 'w' ? -1 : 1;
-                const startRow = color === 'w' ? 6 : 1;
-                
-                if (fromCol === toCol && !targetPiece) {
-                  if (toRow === fromRow + direction) return true;
-                  if (fromRow === startRow && toRow === fromRow + 2 * direction) return true;
-                }
-                if (colDiff === 1 && toRow === fromRow + direction && targetPiece) return true;
-                return false;
-                
-              case 'R': // Rook
-                if (fromRow === toRow || fromCol === toCol) {
-                  return isPathClear(fromRow, fromCol, toRow, toCol, board);
-                }
-                return false;
-                
-              case 'N': // Knight
-                return (rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2);
-                
-              case 'B': // Bishop
-                if (rowDiff === colDiff) {
-                  return isPathClear(fromRow, fromCol, toRow, toCol, board);
-                }
-                return false;
-                
-              case 'Q': // Queen
-                if (fromRow === toRow || fromCol === toCol || rowDiff === colDiff) {
-                  return isPathClear(fromRow, fromCol, toRow, toCol, board);
-                }
-                return false;
-                
-              case 'K': // King
-                return rowDiff <= 1 && colDiff <= 1;
-                
-              default:
-                return false;
-            }
-          }, []);
-
-          const isPathClear = (fromRow, fromCol, toRow, toCol, board) => {
-            const rowStep = toRow > fromRow ? 1 : toRow < fromRow ? -1 : 0;
-            const colStep = toCol > fromCol ? 1 : toCol < fromCol ? -1 : 0;
-            
-            let row = fromRow + rowStep;
-            let col = fromCol + colStep;
-            
-            while (row !== toRow || col !== toCol) {
-              if (board[row][col]) return false;
-              row += rowStep;
-              col += colStep;
-            }
-            
-            return true;
-          };
-
-          const getValidMovesForPiece = useCallback((row, col, board) => {
-            const piece = board[row][col];
-            if (!piece || piece[0] !== currentPlayer) return [];
-            
-            const moves = [];
-            for (let toRow = 0; toRow < 8; toRow++) {
-              for (let toCol = 0; toCol < 8; toCol++) {
-                if (isValidMove(row, col, toRow, toCol, piece, board)) {
-                  moves.push([toRow, toCol]);
-                }
-              }
-            }
-            return moves;
-          }, [currentPlayer, isValidMove]);
-
-          const handleSquareClick = useCallback((row, col) => {
-            if (selectedSquare) {
-              const [selectedRow, selectedCol] = selectedSquare;
-              const piece = board[selectedRow][selectedCol];
-              
-              if (piece && isValidMove(selectedRow, selectedCol, row, col, piece, board)) {
-                // Make the move
-                const newBoard = board.map(r => [...r]);
-                const capturedPiece = newBoard[row][col];
-                newBoard[row][col] = newBoard[selectedRow][selectedCol];
-                newBoard[selectedRow][selectedCol] = null;
-                
-                setBoard(newBoard);
-                setCurrentPlayer(currentPlayer === 'w' ? 'b' : 'w');
-                setMoveHistory(prev => [...prev, {
-                  from: `${String.fromCharCode(97 + selectedCol)}${8 - selectedRow}`,
-                  to: `${String.fromCharCode(97 + col)}${8 - row}`,
-                  piece: piece[1],
-                  captured: capturedPiece
-                }]);
-              }
-              
-              setSelectedSquare(null);
-              setValidMoves([]);
-            } else {
-              const piece = board[row][col];
-              if (piece && piece[0] === currentPlayer) {
-                setSelectedSquare([row, col]);
-                setValidMoves(getValidMovesForPiece(row, col, board));
-              }
-            }
-          }, [selectedSquare, board, currentPlayer, isValidMove, getValidMovesForPiece]);
-
-          const boardStyles = {
-            hyperion: {
-              light: '#2a2a2a',
-              dark: '#1a1a1a'
-            },
-            carbon: {
-              light: '#3a3a3a',
-              dark: '#2a2a2a'
-            },
-            classic: {
-              light: '#f0d9b5',
-              dark: '#b58863'
-            }
-          };
-
-          const flipBoard = () => {
-            setBoardOrientation(boardOrientation === 'white' ? 'black' : 'white');
-          };
-
-          const resetGame = () => {
-            setBoard(initialBoard);
-            setCurrentPlayer('w');
-            setSelectedSquare(null);
-            setMoveHistory([]);
-            setValidMoves([]);
-          };
-
-          const renderBoard = () => {
-            const displayBoard = boardOrientation === 'white' ? board : [...board].reverse().map(row => [...row].reverse());
-            
-            return React.createElement('div', {
-              style: {
-                display: 'grid',
-                gridTemplateColumns: 'repeat(8, 1fr)',
-                gridTemplateRows: 'repeat(8, 1fr)',
-                width: '500px',
-                height: '500px',
-                border: '2px solid #333',
-                borderRadius: '8px',
-                overflow: 'hidden'
-              }
-            }, 
-            displayBoard.map((row, rowIndex) =>
-              row.map((piece, colIndex) => {
-                const actualRow = boardOrientation === 'white' ? rowIndex : 7 - rowIndex;
-                const actualCol = boardOrientation === 'white' ? colIndex : 7 - colIndex;
-                const isLight = (actualRow + actualCol) % 2 === 0;
-                const isSelected = selectedSquare && selectedSquare[0] === actualRow && selectedSquare[1] === actualCol;
-                const isValidMove = validMoves.some(([r, c]) => r === actualRow && c === actualCol);
-                
-                return React.createElement('div', {
-                  key: `${actualRow}-${actualCol}`,
-                  onClick: () => handleSquareClick(actualRow, actualCol),
-                  style: {
-                    backgroundColor: isSelected ? '#555' : isLight ? boardStyles[boardStyle].light : boardStyles[boardStyle].dark,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    cursor: 'pointer',
-                    position: 'relative',
-                    border: isValidMove ? '2px solid #0066cc' : 'none'
-                  }
-                }, [
-                  piece && customPieces[piece] && customPieces[piece]({ size: 50 }),
-                  isValidMove && !piece && React.createElement('div', {
-                    style: {
-                      width: '20px',
-                      height: '20px',
-                      backgroundColor: '#0066cc',
-                      borderRadius: '50%',
-                      opacity: 0.7
-                    }
-                  })
-                ]);
-              })
-            ));
-          };
-
-          const formatMoveHistory = () => {
-            const moves = [];
-            for (let i = 0; i < moveHistory.length; i += 2) {
-              const moveNumber = Math.floor(i / 2) + 1;
-              const whiteMove = moveHistory[i] ? `${moveHistory[i].piece}${moveHistory[i].to}` : '';
-              const blackMove = moveHistory[i + 1] ? `${moveHistory[i + 1].piece}${moveHistory[i + 1].to}` : '';
-              moves.push({ moveNumber, white: whiteMove, black: blackMove });
-            }
-            return moves;
-          };
-
-          return React.createElement('div', {
-            style: {
-              backgroundColor: '#0a0a0a',
-              color: '#ffffff',
-              minHeight: '100vh',
-              fontFamily: 'Inter, system-ui, sans-serif',
-              display: 'grid',
-              gridTemplateColumns: '1fr auto 300px',
-              gap: '24px',
-              padding: '24px'
-            }
-          }, [
-            // Header
-            React.createElement('div', {
-              key: 'header',
-              style: {
-                gridColumn: '1 / -1',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                borderBottom: '1px solid #333',
-                paddingBottom: '16px',
-                marginBottom: '24px'
-              }
-            }, 
-              React.createElement('div', {
-                style: { display: 'flex', alignItems: 'center', gap: '16px' }
-              }, [
-                React.createElement('div', {
-                  key: 'title',
-                  style: { fontSize: '24px', fontWeight: '600' }
-                }, '🏇 HYPERION IX'),
-                React.createElement('div', {
-                  key: 'nav',
-                  style: {
-                    display: 'flex',
-                    gap: '12px',
-                    fontSize: '14px',
-                    color: '#888'
-                  }
-                }, [
-                  React.createElement('span', { key: 'c1' }, 'culmination'),
-                  React.createElement('span', { key: 'c2' }, 'collapse'),
-                  React.createElement('span', { key: 'c3' }, 'entropy')
-                ])
-              ])
-            ),
-            
-            // Game Info
-            React.createElement('div', {
-              key: 'gameinfo',
-              style: {
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '16px'
-              }
-            }, [
-              React.createElement('div', {
-                key: 'status',
-                style: {
-                  backgroundColor: '#1a1a1a',
-                  padding: '16px',
-                  borderRadius: '8px',
-                  border: '1px solid #333'
-                }
-              }, [
-                React.createElement('div', {
-                  key: 'player',
-                  style: { fontSize: '14px', color: '#888', marginBottom: '8px' }
-                }, currentPlayer === 'w' ? 'White to play' : 'Black to play'),
-                React.createElement('div', {
-                  key: 'gamestat',
-                  style: { fontSize: '16px', fontWeight: '500' }
-                }, 'Status: Active'),
-                React.createElement('div', {
-                  key: 'movenum',
-                  style: { fontSize: '14px', color: '#888', marginTop: '4px' }
-                }, `Move: ${moveHistory.length + 1}`)
-              ]),
-
-              React.createElement('div', {
-                key: 'buttons',
-                style: {
-                  display: 'flex',
-                  gap: '8px',
-                  flexWrap: 'wrap'
-                }
-              }, [
-                React.createElement('button', {
-                  key: 'flip',
-                  onClick: flipBoard,
-                  style: {
-                    backgroundColor: '#333',
-                    color: '#fff',
-                    border: 'none',
-                    padding: '8px 16px',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '14px'
-                  }
-                }, 'Flip Board'),
-                React.createElement('button', {
-                  key: 'reset',
-                  onClick: resetGame,
-                  style: {
-                    backgroundColor: '#555',
-                    color: '#fff',
-                    border: 'none',
-                    padding: '8px 16px',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '14px'
-                  }
-                }, 'Reset Game')
-              ]),
-
-              React.createElement('div', {
-                key: 'styles',
-                style: {
-                  backgroundColor: '#1a1a1a',
-                  padding: '16px',
-                  borderRadius: '8px',
-                  border: '1px solid #333'
-                }
-              }, [
-                React.createElement('div', {
-                  key: 'styletitle',
-                  style: { fontSize: '14px', color: '#888', marginBottom: '12px' }
-                }, 'Board Style'),
-                React.createElement('div', {
-                  key: 'stylebuttons',
-                  style: { display: 'flex', gap: '8px' }
-                }, ['hyperion', 'carbon', 'classic'].map(style =>
-                  React.createElement('button', {
-                    key: style,
-                    onClick: () => setBoardStyle(style),
-                    style: {
-                      backgroundColor: boardStyle === style ? '#555' : '#333',
-                      color: '#fff',
-                      border: 'none',
-                      padding: '6px 12px',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      textTransform: 'capitalize'
-                    }
-                  }, style)
-                ))
-              ])
-            ]),
-
-            // Chess Board
-            React.createElement('div', {
-              key: 'boardcontainer',
-              style: {
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center'
-              }
-            }, renderBoard()),
-
-            // Analysis Panel
-            React.createElement('div', {
-              key: 'analysis',
-              style: {
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '16px'
-              }
-            }, [
-              // Collapse Analysis
-              React.createElement('div', {
-                key: 'collapse',
-                style: {
-                  backgroundColor: '#1a1a1a',
-                  padding: '16px',
-                  borderRadius: '8px',
-                  border: '1px solid #333'
-                }
-              }, [
-                React.createElement('div', {
-                  key: 'collapsetitle',
-                  style: { 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '8px',
-                    marginBottom: '12px'
-                  }
-                }, [
-                  React.createElement('span', { key: 'icon', style: { fontSize: '20px' } }, '⏳'),
-                  React.createElement('span', { key: 'text', style: { fontSize: '14px', fontWeight: '500' } }, 'Collapse Trigger %')
-                ]),
-                React.createElement('div', {
-                  key: 'collapsetext',
-                  style: { 
-                    fontSize: '16px', 
-                    color: '#888',
-                    textAlign: 'center'
-                  }
-                }, 'No collapse detected')
-              ]),
-
-              // Move History
-              React.createElement('div', {
-                key: 'history',
-                style: {
-                  backgroundColor: '#1a1a1a',
-                  padding: '16px',
-                  borderRadius: '8px',
-                  border: '1px solid #333',
-                  flex: 1
-                }
-              }, [
-                React.createElement('div', {
-                  key: 'historytitle',
-                  style: { 
-                    fontSize: '14px', 
-                    fontWeight: '500',
-                    marginBottom: '12px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }
-                }, [
-                  React.createElement('span', { key: 'title' }, 'Move History'),
-                  React.createElement('span', {
-                    key: 'count',
-                    style: { fontSize: '12px', color: '#888' }
-                  }, `move ${moveHistory.length}`)
-                ]),
-                
-                React.createElement('div', {
-                  key: 'historylist',
-                  style: {
-                    maxHeight: '300px',
-                    overflowY: 'auto',
-                    fontSize: '14px'
-                  }
-                }, formatMoveHistory().map((move, index) =>
-                  React.createElement('div', {
-                    key: index,
-                    style: {
-                      display: 'flex',
-                      gap: '12px',
-                      padding: '4px 0',
-                      borderBottom: '1px solid #333'
-                    }
-                  }, [
-                    React.createElement('span', {
-                      key: 'num',
-                      style: { color: '#888', minWidth: '20px' }
-                    }, `${move.moveNumber}.`),
-                    React.createElement('span', {
-                      key: 'white',
-                      style: { minWidth: '60px', color: '#fff' }
-                    }, move.white),
-                    React.createElement('span', {
-                      key: 'black',
-                      style: { color: '#ccc' }
-                    }, move.black)
-                  ])
-                ))
-              ]),
-
-              // Game Analysis
-              React.createElement('div', {
-                key: 'gameanalysis',
-                style: {
-                  backgroundColor: '#1a1a1a',
-                  padding: '16px',
-                  borderRadius: '8px',
-                  border: '1px solid #333'
-                }
-              }, [
-                React.createElement('div', {
-                  key: 'analysistitle',
-                  style: { fontSize: '14px', fontWeight: '500', marginBottom: '12px' }
-                }, 'Analysis'),
-                React.createElement('div', {
-                  key: 'analysisinfo',
-                  style: { fontSize: '12px', color: '#888' }
-                }, [
-                  React.createElement('div', { key: 'material' }, 'Material: Equal'),
-                  React.createElement('div', { key: 'position' }, 'Position: Balanced'),
-                  React.createElement('div', { key: 'safety' }, 'Safety: Secure')
-                ])
-              ])
-            ])
-          ]);
+        // Chess piece Unicode symbols
+        const pieceSymbols = {
+            wK: '♔', wQ: '♕', wR: '♖', wB: '♗', wN: '♘', wP: '♙',
+            bK: '♚', bQ: '♛', bR: '♜', bB: '♝', bN: '♞', bP: '♟'
         };
 
-        ReactDOM.render(React.createElement(HyperionChess), document.getElementById('root'));
+        // Simple chess engine
+        class SimpleChess {
+            constructor() {
+                this.board = [
+                    ['bR', 'bN', 'bB', 'bQ', 'bK', 'bB', 'bN', 'bR'],
+                    ['bP', 'bP', 'bP', 'bP', 'bP', 'bP', 'bP', 'bP'],
+                    [null, null, null, null, null, null, null, null],
+                    [null, null, null, null, null, null, null, null],
+                    [null, null, null, null, null, null, null, null],
+                    [null, null, null, null, null, null, null, null],
+                    ['wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP'],
+                    ['wR', 'wN', 'wB', 'wQ', 'wK', 'wB', 'wN', 'wR']
+                ];
+                this.turn = 'w';
+            }
+
+            fen() {
+                let fen = '';
+                for (let row = 0; row < 8; row++) {
+                    let emptyCount = 0;
+                    for (let col = 0; col < 8; col++) {
+                        const piece = this.board[row][col];
+                        if (piece) {
+                            if (emptyCount > 0) {
+                                fen += emptyCount;
+                                emptyCount = 0;
+                            }
+                            fen += piece[0] === 'w' ? piece[1].toUpperCase() : piece[1].toLowerCase();
+                        } else {
+                            emptyCount++;
+                        }
+                    }
+                    if (emptyCount > 0) fen += emptyCount;
+                    if (row < 7) fen += '/';
+                }
+                fen += ` ${this.turn} - - 0 1`;
+                return fen;
+            }
+
+            load(fen) {
+                try {
+                    const parts = fen.split(' ');
+                    const boardPart = parts[0];
+                    const rows = boardPart.split('/');
+                    
+                    if (rows.length !== 8) return false;
+                    
+                    const newBoard = [];
+                    for (let i = 0; i < 8; i++) {
+                        const row = [];
+                        const rowStr = rows[i];
+                        for (let j = 0; j < rowStr.length; j++) {
+                            const char = rowStr[j];
+                            if (char >= '1' && char <= '8') {
+                                const emptySquares = parseInt(char);
+                                for (let k = 0; k < emptySquares; k++) {
+                                    row.push(null);
+                                }
+                            } else {
+                                const color = char === char.toUpperCase() ? 'w' : 'b';
+                                const piece = color + char.toUpperCase();
+                                row.push(piece);
+                            }
+                        }
+                        if (row.length !== 8) return false;
+                        newBoard.push(row);
+                    }
+                    
+                    this.board = newBoard;
+                    this.turn = parts[1] || 'w';
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            move({ from, to, promotion = 'Q' }) {
+                const fromCol = from.charCodeAt(0) - 97;
+                const fromRow = 8 - parseInt(from[1]);
+                const toCol = to.charCodeAt(0) - 97;
+                const toRow = 8 - parseInt(to[1]);
+
+                if (fromRow < 0 || fromRow > 7 || fromCol < 0 || fromCol > 7 ||
+                    toRow < 0 || toRow > 7 || toCol < 0 || toCol > 7) {
+                    return null;
+                }
+
+                const piece = this.board[fromRow][fromCol];
+                if (!piece || piece[0] !== this.turn) return null;
+
+                if (this.isValidMove(fromRow, fromCol, toRow, toCol)) {
+                    const capturedPiece = this.board[toRow][toCol];
+                    this.board[toRow][toCol] = piece;
+                    this.board[fromRow][fromCol] = null;
+                    
+                    // Handle pawn promotion
+                    if (piece[1] === 'P' && (toRow === 0 || toRow === 7)) {
+                        this.board[toRow][toCol] = piece[0] + promotion.toUpperCase();
+                    }
+                    
+                    this.turn = this.turn === 'w' ? 'b' : 'w';
+                    return { from, to, piece, captured: capturedPiece };
+                }
+                return null;
+            }
+
+            isValidMove(fromRow, fromCol, toRow, toCol) {
+                const piece = this.board[fromRow][fromCol];
+                const targetPiece = this.board[toRow][toCol];
+                
+                if (targetPiece && targetPiece[0] === piece[0]) return false;
+                
+                const pieceType = piece[1];
+                const rowDiff = Math.abs(toRow - fromRow);
+                const colDiff = Math.abs(toCol - fromCol);
+                
+                switch (pieceType) {
+                    case 'P':
+                        const direction = piece[0] === 'w' ? -1 : 1;
+                        const startRow = piece[0] === 'w' ? 6 : 1;
+                        
+                        if (fromCol === toCol && !targetPiece) {
+                            if (toRow === fromRow + direction) return true;
+                            if (fromRow === startRow && toRow === fromRow + 2 * direction) return true;
+                        }
+                        if (colDiff === 1 && toRow === fromRow + direction && targetPiece) return true;
+                        return false;
+                        
+                    case 'R':
+                        if (fromRow === toRow || fromCol === toCol) {
+                            return this.isPathClear(fromRow, fromCol, toRow, toCol);
+                        }
+                        return false;
+                        
+                    case 'N':
+                        return (rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2);
+                        
+                    case 'B':
+                        if (rowDiff === colDiff) {
+                            return this.isPathClear(fromRow, fromCol, toRow, toCol);
+                        }
+                        return false;
+                        
+                    case 'Q':
+                        if (fromRow === toRow || fromCol === toCol || rowDiff === colDiff) {
+                            return this.isPathClear(fromRow, fromCol, toRow, toCol);
+                        }
+                        return false;
+                        
+                    case 'K':
+                        return rowDiff <= 1 && colDiff <= 1;
+                        
+                    default:
+                        return false;
+                }
+            }
+
+            isPathClear(fromRow, fromCol, toRow, toCol) {
+                const rowStep = toRow > fromRow ? 1 : toRow < fromRow ? -1 : 0;
+                const colStep = toCol > fromCol ? 1 : toCol < fromCol ? -1 : 0;
+                
+                let row = fromRow + rowStep;
+                let col = fromCol + colStep;
+                
+                while (row !== toRow || col !== toCol) {
+                    if (this.board[row][col]) return false;
+                    row += rowStep;
+                    col += colStep;
+                }
+                
+                return true;
+            }
+        }
+
+        function HyperionBoard() {
+            const [game, setGame] = useState(new SimpleChess());
+            const [fenInput, setFenInput] = useState('');
+            const [selectedSquare, setSelectedSquare] = useState(null);
+            const [validMoves, setValidMoves] = useState([]);
+
+            const onSquareClick = useCallback((row, col) => {
+                const square = String.fromCharCode(97 + col) + (8 - row);
+                
+                if (selectedSquare) {
+                    const move = game.move({ from: selectedSquare, to: square });
+                    if (move) {
+                        setGame(new SimpleChess());
+                        const newGame = new SimpleChess();
+                        newGame.load(game.fen());
+                        setGame(newGame);
+                    }
+                    setSelectedSquare(null);
+                    setValidMoves([]);
+                } else {
+                    const piece = game.board[row][col];
+                    if (piece && piece[0] === game.turn) {
+                        setSelectedSquare(square);
+                        // Calculate valid moves (simplified)
+                        const moves = [];
+                        for (let r = 0; r < 8; r++) {
+                            for (let c = 0; c < 8; c++) {
+                                if (game.isValidMove(row, col, r, c)) {
+                                    moves.push([r, c]);
+                                }
+                            }
+                        }
+                        setValidMoves(moves);
+                    }
+                }
+            }, [game, selectedSquare]);
+
+            const loadFEN = () => {
+                const newGame = new SimpleChess();
+                if (newGame.load(fenInput)) {
+                    setGame(newGame);
+                } else {
+                    alert('Invalid FEN');
+                }
+            };
+
+            const resetGame = () => {
+                setGame(new SimpleChess());
+                setSelectedSquare(null);
+                setValidMoves([]);
+            };
+
+            return React.createElement('div', {
+                style: {
+                    backgroundColor: '#000',
+                    color: '#fff',
+                    minHeight: '100vh',
+                    padding: '32px'
+                }
+            }, [
+                React.createElement('h1', {
+                    key: 'title',
+                    style: {
+                        fontSize: '36px',
+                        fontWeight: 'bold',
+                        marginBottom: '24px',
+                        textAlign: 'center'
+                    }
+                }, '🏇 HYPERION IX Interactive Board'),
+                
+                React.createElement('div', {
+                    key: 'content',
+                    style: {
+                        display: 'flex',
+                        gap: '48px',
+                        justifyContent: 'center',
+                        flexWrap: 'wrap'
+                    }
+                }, [
+                    // Chess Board
+                    React.createElement('div', {
+                        key: 'board-container',
+                        style: {
+                            border: '4px solid #555',
+                            borderRadius: '12px',
+                            padding: '16px',
+                            backgroundColor: '#111'
+                        }
+                    }, 
+                        React.createElement('div', {
+                            style: {
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(8, 1fr)',
+                                gridTemplateRows: 'repeat(8, 1fr)',
+                                width: '500px',
+                                height: '500px',
+                                border: '2px solid #333'
+                            }
+                        }, 
+                        game.board.map((row, rowIndex) =>
+                            row.map((piece, colIndex) => {
+                                const isLight = (rowIndex + colIndex) % 2 === 0;
+                                const isSelected = selectedSquare === String.fromCharCode(97 + colIndex) + (8 - rowIndex);
+                                const isValidMove = validMoves.some(([r, c]) => r === rowIndex && c === colIndex);
+                                
+                                return React.createElement('div', {
+                                    key: `${rowIndex}-${colIndex}`,
+                                    onClick: () => onSquareClick(rowIndex, colIndex),
+                                    style: {
+                                        backgroundColor: isSelected ? '#555' : 
+                                                       isLight ? '#f0d9b5' : '#b58863',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        fontSize: '32px',
+                                        border: isValidMove ? '3px solid #0066cc' : 'none',
+                                        position: 'relative'
+                                    }
+                                }, [
+                                    piece && React.createElement('span', {
+                                        key: 'piece',
+                                        className: 'chess-piece',
+                                        style: {
+                                            color: piece[0] === 'w' ? '#fff' : '#000',
+                                            textShadow: piece[0] === 'w' ? '1px 1px 2px #000' : '1px 1px 2px #fff'
+                                        }
+                                    }, pieceSymbols[piece]),
+                                    isValidMove && !piece && React.createElement('div', {
+                                        key: 'dot',
+                                        style: {
+                                            width: '20px',
+                                            height: '20px',
+                                            backgroundColor: '#0066cc',
+                                            borderRadius: '50%',
+                                            opacity: 0.7
+                                        }
+                                    })
+                                ]);
+                            })
+                        ))
+                    ),
+                    
+                    // Control Panel
+                    React.createElement('div', {
+                        key: 'controls',
+                        style: {
+                            width: '384px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '16px'
+                        }
+                    }, [
+                        React.createElement('div', {
+                            key: 'fen-section',
+                            style: {
+                                backgroundColor: '#111',
+                                padding: '16px',
+                                borderRadius: '8px',
+                                border: '1px solid #333'
+                            }
+                        }, [
+                            React.createElement('label', {
+                                key: 'fen-label',
+                                style: {
+                                    display: 'block',
+                                    marginBottom: '8px',
+                                    fontSize: '18px',
+                                    fontWeight: '500'
+                                }
+                            }, 'Load FEN:'),
+                            React.createElement('input', {
+                                key: 'fen-input',
+                                type: 'text',
+                                value: fenInput,
+                                onChange: (e) => setFenInput(e.target.value),
+                                style: {
+                                    width: '100%',
+                                    padding: '8px',
+                                    backgroundColor: '#222',
+                                    border: '1px solid #555',
+                                    borderRadius: '4px',
+                                    color: '#fff',
+                                    fontSize: '14px'
+                                }
+                            }),
+                            React.createElement('button', {
+                                key: 'load-btn',
+                                onClick: loadFEN,
+                                style: {
+                                    marginTop: '16px',
+                                    padding: '8px 16px',
+                                    backgroundColor: '#16a34a',
+                                    color: '#fff',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold'
+                                }
+                            }, 'Load Position'),
+                            React.createElement('button', {
+                                key: 'reset-btn',
+                                onClick: resetGame,
+                                style: {
+                                    marginTop: '8px',
+                                    marginLeft: '8px',
+                                    padding: '8px 16px',
+                                    backgroundColor: '#dc2626',
+                                    color: '#fff',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold'
+                                }
+                            }, 'Reset Game')
+                        ]),
+                        
+                        React.createElement('div', {
+                            key: 'current-fen',
+                            style: {
+                                backgroundColor: '#111',
+                                padding: '16px',
+                                borderRadius: '8px',
+                                border: '1px solid #333'
+                            }
+                        }, [
+                            React.createElement('h2', {
+                                key: 'fen-title',
+                                style: {
+                                    fontSize: '20px',
+                                    fontWeight: '600',
+                                    marginBottom: '8px'
+                                }
+                            }, 'Current FEN:'),
+                            React.createElement('p', {
+                                key: 'fen-display',
+                                style: {
+                                    fontSize: '12px',
+                                    wordBreak: 'break-all',
+                                    backgroundColor: '#000',
+                                    padding: '8px',
+                                    borderRadius: '4px',
+                                    fontFamily: 'monospace'
+                                }
+                            }, game.fen())
+                        ]),
+
+                        React.createElement('div', {
+                            key: 'game-info',
+                            style: {
+                                backgroundColor: '#111',
+                                padding: '16px',
+                                borderRadius: '8px',
+                                border: '1px solid #333'
+                            }
+                        }, [
+                            React.createElement('h3', {
+                                key: 'info-title',
+                                style: { marginBottom: '8px' }
+                            }, 'Game Info:'),
+                            React.createElement('p', {
+                                key: 'turn-info'
+                            }, `Turn: ${game.turn === 'w' ? 'White' : 'Black'}`),
+                            selectedSquare && React.createElement('p', {
+                                key: 'selected-info'
+                            }, `Selected: ${selectedSquare}`)
+                        ])
+                    ])
+                ])
+            ]);
+        }
+
+        ReactDOM.render(React.createElement(HyperionBoard), document.getElementById('root'));
     </script>
 </body>
 </html>
