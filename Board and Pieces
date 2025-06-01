@@ -1,674 +1,691 @@
-import React, { useState, useCallback, useMemo } from 'react';
-
-const HyperionChess = () => {
-  // Initialize board with starting position
-  const initialBoard = [
-    ['bR', 'bN', 'bB', 'bQ', 'bK', 'bB', 'bN', 'bR'],
-    ['bP', 'bP', 'bP', 'bP', 'bP', 'bP', 'bP', 'bP'],
-    [null, null, null, null, null, null, null, null],
-    [null, null, null, null, null, null, null, null],
-    [null, null, null, null, null, null, null, null],
-    [null, null, null, null, null, null, null, null],
-    ['wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP'],
-    ['wR', 'wN', 'wB', 'wQ', 'wK', 'wB', 'wN', 'wR']
-  ];
-
-  const [board, setBoard] = useState(initialBoard);
-  const [currentPlayer, setCurrentPlayer] = useState('w');
-  const [selectedSquare, setSelectedSquare] = useState(null);
-  const [moveHistory, setMoveHistory] = useState([]);
-  const [boardOrientation, setBoardOrientation] = useState('white');
-  const [boardStyle, setBoardStyle] = useState('hyperion');
-  const [validMoves, setValidMoves] = useState([]);
-
-  // Custom HYPERION IX pieces with split gradients
-  const customPieces = useMemo(() => {
-    const pieceComponents = {};
-    
-    // White pieces (left side silver, right side white)
-    pieceComponents.wP = ({ size = 40 }) => (
-      <svg width={size} height={size} viewBox="0 0 64 64">
-        <defs>
-          <linearGradient id="wPawnGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="50%" stopColor="#A0A0A0" />
-            <stop offset="50%" stopColor="#FFFFFF" />
-          </linearGradient>
-        </defs>
-        <circle cx="32" cy="16" r="8" fill="url(#wPawnGrad)" />
-        <rect x="28" y="24" width="8" height="4" fill="url(#wPawnGrad)" />
-        <path d="M24 28 L40 28 L38 48 L26 48 Z" fill="url(#wPawnGrad)" />
-        <rect x="24" y="48" width="16" height="4" fill="url(#wPawnGrad)" />
-      </svg>
-    );
-
-    pieceComponents.wR = ({ size = 40 }) => (
-      <svg width={size} height={size} viewBox="0 0 64 64">
-        <defs>
-          <linearGradient id="wRookGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="50%" stopColor="#A0A0A0" />
-            <stop offset="50%" stopColor="#FFFFFF" />
-          </linearGradient>
-        </defs>
-        <rect x="20" y="8" width="6" height="8" fill="url(#wRookGrad)" />
-        <rect x="29" y="8" width="6" height="8" fill="url(#wRookGrad)" />
-        <rect x="38" y="8" width="6" height="8" fill="url(#wRookGrad)" />
-        <rect x="18" y="16" width="28" height="6" fill="url(#wRookGrad)" />
-        <rect x="20" y="22" width="24" height="26" fill="url(#wRookGrad)" />
-        <rect x="16" y="48" width="32" height="6" fill="url(#wRookGrad)" />
-      </svg>
-    );
-
-    pieceComponents.wN = ({ size = 40 }) => (
-      <svg width={size} height={size} viewBox="0 0 64 64">
-        <defs>
-          <linearGradient id="wKnightGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="50%" stopColor="#A0A0A0" />
-            <stop offset="50%" stopColor="#FFFFFF" />
-          </linearGradient>
-        </defs>
-        <path d="M20 48 Q20 32 28 24 Q32 20 36 20 Q40 16 44 20 Q48 24 46 28 Q44 32 40 36 Q36 40 32 44 Q28 48 20 48" fill="url(#wKnightGrad)" />
-        <circle cx="38" cy="26" r="2" fill="#333" />
-        <path d="M32 18 L36 14 L40 16 L38 20" fill="url(#wKnightGrad)" />
-        <rect x="18" y="48" width="28" height="4" fill="url(#wKnightGrad)" />
-      </svg>
-    );
-
-    pieceComponents.wB = ({ size = 40 }) => (
-      <svg width={size} height={size} viewBox="0 0 64 64">
-        <defs>
-          <linearGradient id="wBishopGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="50%" stopColor="#A0A0A0" />
-            <stop offset="50%" stopColor="#FFFFFF" />
-          </linearGradient>
-        </defs>
-        <circle cx="32" cy="12" r="4" fill="url(#wBishopGrad)" />
-        <path d="M28 16 Q32 8 36 16 Q40 24 38 32 Q36 40 32 44 Q28 40 26 32 Q24 24 28 16" fill="url(#wBishopGrad)" />
-        <rect x="30" y="20" width="4" height="8" fill="#333" />
-        <rect x="24" y="44" width="16" height="4" fill="url(#wBishopGrad)" />
-        <rect x="20" y="48" width="24" height="4" fill="url(#wBishopGrad)" />
-      </svg>
-    );
-
-    pieceComponents.wQ = ({ size = 40 }) => (
-      <svg width={size} height={size} viewBox="0 0 64 64">
-        <defs>
-          <linearGradient id="wQueenGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="50%" stopColor="#A0A0A0" />
-            <stop offset="50%" stopColor="#FFFFFF" />
-          </linearGradient>
-        </defs>
-        <circle cx="20" cy="16" r="3" fill="url(#wQueenGrad)" />
-        <circle cx="28" cy="12" r="3" fill="url(#wQueenGrad)" />
-        <circle cx="32" cy="8" r="4" fill="url(#wQueenGrad)" />
-        <circle cx="36" cy="12" r="3" fill="url(#wQueenGrad)" />
-        <circle cx="44" cy="16" r="3" fill="url(#wQueenGrad)" />
-        <path d="M18 18 L46 18 L42 40 L22 40 Z" fill="url(#wQueenGrad)" />
-        <rect x="20" y="40" width="24" height="4" fill="url(#wQueenGrad)" />
-        <rect x="16" y="44" width="32" height="6" fill="url(#wQueenGrad)" />
-      </svg>
-    );
-
-    pieceComponents.wK = ({ size = 40 }) => (
-      <svg width={size} height={size} viewBox="0 0 64 64">
-        <defs>
-          <linearGradient id="wKingGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="50%" stopColor="#A0A0A0" />
-            <stop offset="50%" stopColor="#FFFFFF" />
-          </linearGradient>
-        </defs>
-        <rect x="30" y="8" width="4" height="8" fill="url(#wKingGrad)" />
-        <rect x="26" y="12" width="12" height="4" fill="url(#wKingGrad)" />
-        <path d="M24 16 Q32 12 40 16 Q42 24 40 32 Q36 40 32 42 Q28 40 24 32 Q22 24 24 16" fill="url(#wKingGrad)" />
-        <rect x="28" y="42" width="8" height="4" fill="url(#wKingGrad)" />
-        <rect x="20" y="46" width="24" height="6" fill="url(#wKingGrad)" />
-      </svg>
-    );
-
-    // Black pieces (left side dark gray, right side black)
-    pieceComponents.bP = ({ size = 40 }) => (
-      <svg width={size} height={size} viewBox="0 0 64 64">
-        <defs>
-          <linearGradient id="bPawnGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="50%" stopColor="#404040" />
-            <stop offset="50%" stopColor="#1a1a1a" />
-          </linearGradient>
-        </defs>
-        <circle cx="32" cy="16" r="8" fill="url(#bPawnGrad)" />
-        <rect x="28" y="24" width="8" height="4" fill="url(#bPawnGrad)" />
-        <path d="M24 28 L40 28 L38 48 L26 48 Z" fill="url(#bPawnGrad)" />
-        <rect x="24" y="48" width="16" height="4" fill="url(#bPawnGrad)" />
-      </svg>
-    );
-
-    pieceComponents.bR = ({ size = 40 }) => (
-      <svg width={size} height={size} viewBox="0 0 64 64">
-        <defs>
-          <linearGradient id="bRookGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="50%" stopColor="#404040" />
-            <stop offset="50%" stopColor="#1a1a1a" />
-          </linearGradient>
-        </defs>
-        <rect x="20" y="8" width="6" height="8" fill="url(#bRookGrad)" />
-        <rect x="29" y="8" width="6" height="8" fill="url(#bRookGrad)" />
-        <rect x="38" y="8" width="6" height="8" fill="url(#bRookGrad)" />
-        <rect x="18" y="16" width="28" height="6" fill="url(#bRookGrad)" />
-        <rect x="20" y="22" width="24" height="26" fill="url(#bRookGrad)" />
-        <rect x="16" y="48" width="32" height="6" fill="url(#bRookGrad)" />
-      </svg>
-    );
-
-    pieceComponents.bN = ({ size = 40 }) => (
-      <svg width={size} height={size} viewBox="0 0 64 64">
-        <defs>
-          <linearGradient id="bKnightGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="50%" stopColor="#404040" />
-            <stop offset="50%" stopColor="#1a1a1a" />
-          </linearGradient>
-        </defs>
-        <path d="M20 48 Q20 32 28 24 Q32 20 36 20 Q40 16 44 20 Q48 24 46 28 Q44 32 40 36 Q36 40 32 44 Q28 48 20 48" fill="url(#bKnightGrad)" />
-        <circle cx="38" cy="26" r="2" fill="#ccc" />
-        <path d="M32 18 L36 14 L40 16 L38 20" fill="url(#bKnightGrad)" />
-        <rect x="18" y="48" width="28" height="4" fill="url(#bKnightGrad)" />
-      </svg>
-    );
-
-    pieceComponents.bB = ({ size = 40 }) => (
-      <svg width={size} height={size} viewBox="0 0 64 64">
-        <defs>
-          <linearGradient id="bBishopGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="50%" stopColor="#404040" />
-            <stop offset="50%" stopColor="#1a1a1a" />
-          </linearGradient>
-        </defs>
-        <circle cx="32" cy="12" r="4" fill="url(#bBishopGrad)" />
-        <path d="M28 16 Q32 8 36 16 Q40 24 38 32 Q36 40 32 44 Q28 40 26 32 Q24 24 28 16" fill="url(#bBishopGrad)" />
-        <rect x="30" y="20" width="4" height="8" fill="#ccc" />
-        <rect x="24" y="44" width="16" height="4" fill="url(#bBishopGrad)" />
-        <rect x="20" y="48" width="24" height="4" fill="url(#bBishopGrad)" />
-      </svg>
-    );
-
-    pieceComponents.bQ = ({ size = 40 }) => (
-      <svg width={size} height={size} viewBox="0 0 64 64">
-        <defs>
-          <linearGradient id="bQueenGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="50%" stopColor="#404040" />
-            <stop offset="50%" stopColor="#1a1a1a" />
-          </linearGradient>
-        </defs>
-        <circle cx="20" cy="16" r="3" fill="url(#bQueenGrad)" />
-        <circle cx="28" cy="12" r="3" fill="url(#bQueenGrad)" />
-        <circle cx="32" cy="8" r="4" fill="url(#bQueenGrad)" />
-        <circle cx="36" cy="12" r="3" fill="url(#bQueenGrad)" />
-        <circle cx="44" cy="16" r="3" fill="url(#bQueenGrad)" />
-        <path d="M18 18 L46 18 L42 40 L22 40 Z" fill="url(#bQueenGrad)" />
-        <rect x="20" y="40" width="24" height="4" fill="url(#bQueenGrad)" />
-        <rect x="16" y="44" width="32" height="6" fill="url(#bQueenGrad)" />
-      </svg>
-    );
-
-    pieceComponents.bK = ({ size = 40 }) => (
-      <svg width={size} height={size} viewBox="0 0 64 64">
-        <defs>
-          <linearGradient id="bKingGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="50%" stopColor="#404040" />
-            <stop offset="50%" stopColor="#1a1a1a" />
-          </linearGradient>
-        </defs>
-        <rect x="30" y="8" width="4" height="8" fill="url(#bKingGrad)" />
-        <rect x="26" y="12" width="12" height="4" fill="url(#bKingGrad)" />
-        <path d="M24 16 Q32 12 40 16 Q42 24 40 32 Q36 40 32 42 Q28 40 24 32 Q22 24 24 16" fill="url(#bKingGrad)" />
-        <rect x="28" y="42" width="8" height="4" fill="url(#bKingGrad)" />
-        <rect x="20" y="46" width="24" height="6" fill="url(#bKingGrad)" />
-      </svg>
-    );
-
-    return pieceComponents;
-  }, []);
-
-  // Chess move validation logic
-  const isValidMove = useCallback((fromRow, fromCol, toRow, toCol, piece, board) => {
-    if (toRow < 0 || toRow > 7 || toCol < 0 || toCol > 7) return false;
-    
-    const targetPiece = board[toRow][toCol];
-    if (targetPiece && targetPiece[0] === piece[0]) return false; // Can't capture own piece
-    
-    const pieceType = piece[1];
-    const color = piece[0];
-    const rowDiff = Math.abs(toRow - fromRow);
-    const colDiff = Math.abs(toCol - fromCol);
-    
-    switch (pieceType) {
-      case 'P': // Pawn
-        const direction = color === 'w' ? -1 : 1;
-        const startRow = color === 'w' ? 6 : 1;
-        
-        if (fromCol === toCol && !targetPiece) {
-          if (toRow === fromRow + direction) return true;
-          if (fromRow === startRow && toRow === fromRow + 2 * direction) return true;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HYPERION IX - Chess Intelligence Platform</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: #0a0a0a;
+            color: #ffffff;
         }
-        if (colDiff === 1 && toRow === fromRow + direction && targetPiece) return true;
-        return false;
-        
-      case 'R': // Rook
-        if (fromRow === toRow || fromCol === toCol) {
-          return isPathClear(fromRow, fromCol, toRow, toCol, board);
+        * {
+            box-sizing: border-box;
         }
-        return false;
-        
-      case 'N': // Knight
-        return (rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2);
-        
-      case 'B': // Bishop
-        if (rowDiff === colDiff) {
-          return isPathClear(fromRow, fromCol, toRow, toCol, board);
-        }
-        return false;
-        
-      case 'Q': // Queen
-        if (fromRow === toRow || fromCol === toCol || rowDiff === colDiff) {
-          return isPathClear(fromRow, fromCol, toRow, toCol, board);
-        }
-        return false;
-        
-      case 'K': // King
-        return rowDiff <= 1 && colDiff <= 1;
-        
-      default:
-        return false;
-    }
-  }, []);
+    </style>
+</head>
+<body>
+    <div id="root"></div>
 
-  const isPathClear = (fromRow, fromCol, toRow, toCol, board) => {
-    const rowStep = toRow > fromRow ? 1 : toRow < fromRow ? -1 : 0;
-    const colStep = toCol > fromCol ? 1 : toCol < fromCol ? -1 : 0;
-    
-    let row = fromRow + rowStep;
-    let col = fromCol + colStep;
-    
-    while (row !== toRow || col !== toCol) {
-      if (board[row][col]) return false;
-      row += rowStep;
-      col += colStep;
-    }
-    
-    return true;
-  };
+    <script type="text/babel">
+        const { useState, useCallback, useMemo } = React;
 
-  const getValidMovesForPiece = useCallback((row, col, board) => {
-    const piece = board[row][col];
-    if (!piece || piece[0] !== currentPlayer) return [];
-    
-    const moves = [];
-    for (let toRow = 0; toRow < 8; toRow++) {
-      for (let toCol = 0; toCol < 8; toCol++) {
-        if (isValidMove(row, col, toRow, toCol, piece, board)) {
-          moves.push([toRow, toCol]);
-        }
-      }
-    }
-    return moves;
-  }, [currentPlayer, isValidMove]);
+        const HyperionChess = () => {
+          // Initialize board with starting position
+          const initialBoard = [
+            ['bR', 'bN', 'bB', 'bQ', 'bK', 'bB', 'bN', 'bR'],
+            ['bP', 'bP', 'bP', 'bP', 'bP', 'bP', 'bP', 'bP'],
+            [null, null, null, null, null, null, null, null],
+            [null, null, null, null, null, null, null, null],
+            [null, null, null, null, null, null, null, null],
+            [null, null, null, null, null, null, null, null],
+            ['wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP'],
+            ['wR', 'wN', 'wB', 'wQ', 'wK', 'wB', 'wN', 'wR']
+          ];
 
-  const handleSquareClick = useCallback((row, col) => {
-    if (selectedSquare) {
-      const [selectedRow, selectedCol] = selectedSquare;
-      const piece = board[selectedRow][selectedCol];
-      
-      if (piece && isValidMove(selectedRow, selectedCol, row, col, piece, board)) {
-        // Make the move
-        const newBoard = board.map(r => [...r]);
-        const capturedPiece = newBoard[row][col];
-        newBoard[row][col] = newBoard[selectedRow][selectedCol];
-        newBoard[selectedRow][selectedCol] = null;
-        
-        setBoard(newBoard);
-        setCurrentPlayer(currentPlayer === 'w' ? 'b' : 'w');
-        setMoveHistory(prev => [...prev, {
-          from: `${String.fromCharCode(97 + selectedCol)}${8 - selectedRow}`,
-          to: `${String.fromCharCode(97 + col)}${8 - row}`,
-          piece: piece[1],
-          captured: capturedPiece
-        }]);
-      }
-      
-      setSelectedSquare(null);
-      setValidMoves([]);
-    } else {
-      const piece = board[row][col];
-      if (piece && piece[0] === currentPlayer) {
-        setSelectedSquare([row, col]);
-        setValidMoves(getValidMovesForPiece(row, col, board));
-      }
-    }
-  }, [selectedSquare, board, currentPlayer, isValidMove, getValidMovesForPiece]);
+          const [board, setBoard] = useState(initialBoard);
+          const [currentPlayer, setCurrentPlayer] = useState('w');
+          const [selectedSquare, setSelectedSquare] = useState(null);
+          const [moveHistory, setMoveHistory] = useState([]);
+          const [boardOrientation, setBoardOrientation] = useState('white');
+          const [boardStyle, setBoardStyle] = useState('hyperion');
+          const [validMoves, setValidMoves] = useState([]);
 
-  const boardStyles = {
-    hyperion: {
-      light: '#2a2a2a',
-      dark: '#1a1a1a'
-    },
-    carbon: {
-      light: '#3a3a3a',
-      dark: '#2a2a2a'
-    },
-    classic: {
-      light: '#f0d9b5',
-      dark: '#b58863'
-    }
-  };
-
-  const flipBoard = () => {
-    setBoardOrientation(boardOrientation === 'white' ? 'black' : 'white');
-  };
-
-  const resetGame = () => {
-    setBoard(initialBoard);
-    setCurrentPlayer('w');
-    setSelectedSquare(null);
-    setMoveHistory([]);
-    setValidMoves([]);
-  };
-
-  const renderBoard = () => {
-    const displayBoard = boardOrientation === 'white' ? board : [...board].reverse().map(row => [...row].reverse());
-    
-    return (
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(8, 1fr)',
-        gridTemplateRows: 'repeat(8, 1fr)',
-        width: '500px',
-        height: '500px',
-        border: '2px solid #333',
-        borderRadius: '8px',
-        overflow: 'hidden'
-      }}>
-        {displayBoard.map((row, rowIndex) =>
-          row.map((piece, colIndex) => {
-            const actualRow = boardOrientation === 'white' ? rowIndex : 7 - rowIndex;
-            const actualCol = boardOrientation === 'white' ? colIndex : 7 - colIndex;
-            const isLight = (actualRow + actualCol) % 2 === 0;
-            const isSelected = selectedSquare && selectedSquare[0] === actualRow && selectedSquare[1] === actualCol;
-            const isValidMove = validMoves.some(([r, c]) => r === actualRow && c === actualCol);
+          // Custom HYPERION IX pieces with split gradients
+          const customPieces = useMemo(() => {
+            const pieceComponents = {};
             
-            return (
-              <div
-                key={`${actualRow}-${actualCol}`}
-                onClick={() => handleSquareClick(actualRow, actualCol)}
-                style={{
-                  backgroundColor: isSelected ? '#555' : isLight ? boardStyles[boardStyle].light : boardStyles[boardStyle].dark,
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  cursor: 'pointer',
-                  position: 'relative',
-                  border: isValidMove ? '2px solid #0066cc' : 'none'
-                }}
-              >
-                {piece && customPieces[piece] && customPieces[piece]({ size: 50 })}
-                {isValidMove && !piece && (
-                  <div style={{
-                    width: '20px',
-                    height: '20px',
-                    backgroundColor: '#0066cc',
-                    borderRadius: '50%',
-                    opacity: 0.7
-                  }} />
-                )}
-              </div>
+            // White pieces (left side silver, right side white)
+            pieceComponents.wP = ({ size = 40 }) => (
+              React.createElement('svg', { width: size, height: size, viewBox: "0 0 64 64" },
+                React.createElement('defs', null,
+                  React.createElement('linearGradient', { id: "wPawnGrad" + Math.random(), x1: "0%", y1: "0%", x2: "100%", y2: "0%" },
+                    React.createElement('stop', { offset: "50%", stopColor: "#A0A0A0" }),
+                    React.createElement('stop', { offset: "50%", stopColor: "#FFFFFF" })
+                  )
+                ),
+                React.createElement('circle', { cx: "32", cy: "16", r: "8", fill: `url(#wPawnGrad${Math.random()})` }),
+                React.createElement('rect', { x: "28", y: "24", width: "8", height: "4", fill: `url(#wPawnGrad${Math.random()})` }),
+                React.createElement('path', { d: "M24 28 L40 28 L38 48 L26 48 Z", fill: `url(#wPawnGrad${Math.random()})` }),
+                React.createElement('rect', { x: "24", y: "48", width: "16", height: "4", fill: `url(#wPawnGrad${Math.random()})` })
+              )
             );
-          })
-        )}
-      </div>
-    );
-  };
 
-  const formatMoveHistory = () => {
-    const moves = [];
-    for (let i = 0; i < moveHistory.length; i += 2) {
-      const moveNumber = Math.floor(i / 2) + 1;
-      const whiteMove = moveHistory[i] ? `${moveHistory[i].piece}${moveHistory[i].to}` : '';
-      const blackMove = moveHistory[i + 1] ? `${moveHistory[i + 1].piece}${moveHistory[i + 1].to}` : '';
-      moves.push({ moveNumber, white: whiteMove, black: blackMove });
-    }
-    return moves;
-  };
+            // Simplified pieces for now - using solid colors to ensure rendering
+            pieceComponents.wR = ({ size = 40 }) => (
+              React.createElement('svg', { width: size, height: size, viewBox: "0 0 64 64" },
+                React.createElement('rect', { x: "20", y: "8", width: "6", height: "8", fill: "#FFFFFF" }),
+                React.createElement('rect', { x: "29", y: "8", width: "6", height: "8", fill: "#FFFFFF" }),
+                React.createElement('rect', { x: "38", y: "8", width: "6", height: "8", fill: "#FFFFFF" }),
+                React.createElement('rect', { x: "18", y: "16", width: "28", height: "6", fill: "#FFFFFF" }),
+                React.createElement('rect', { x: "20", y: "22", width: "24", height: "26", fill: "#FFFFFF" }),
+                React.createElement('rect', { x: "16", y: "48", width: "32", height: "6", fill: "#FFFFFF" })
+              )
+            );
 
-  return (
-    <div style={{
-      backgroundColor: '#0a0a0a',
-      color: '#ffffff',
-      minHeight: '100vh',
-      fontFamily: 'Inter, system-ui, sans-serif',
-      display: 'grid',
-      gridTemplateColumns: '1fr auto 300px',
-      gap: '24px',
-      padding: '24px'
-    }}>
-      {/* Header */}
-      <div style={{
-        gridColumn: '1 / -1',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderBottom: '1px solid #333',
-        paddingBottom: '16px',
-        marginBottom: '24px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ fontSize: '24px', fontWeight: '600' }}>
-            🏇 HYPERION IX
-          </div>
-          <div style={{
-            display: 'flex',
-            gap: '12px',
-            fontSize: '14px',
-            color: '#888'
-          }}>
-            <span>culmination</span>
-            <span>collapse</span>
-            <span>entropy</span>
-          </div>
-        </div>
-      </div>
+            pieceComponents.wN = ({ size = 40 }) => (
+              React.createElement('svg', { width: size, height: size, viewBox: "0 0 64 64" },
+                React.createElement('path', { d: "M20 48 Q20 32 28 24 Q32 20 36 20 Q40 16 44 20 Q48 24 46 28 Q44 32 40 36 Q36 40 32 44 Q28 48 20 48", fill: "#FFFFFF" }),
+                React.createElement('circle', { cx: "38", cy: "26", r: "2", fill: "#333" }),
+                React.createElement('path', { d: "M32 18 L36 14 L40 16 L38 20", fill: "#FFFFFF" }),
+                React.createElement('rect', { x: "18", y: "48", width: "28", height: "4", fill: "#FFFFFF" })
+              )
+            );
 
-      {/* Game Info */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px'
-      }}>
-        <div style={{
-          backgroundColor: '#1a1a1a',
-          padding: '16px',
-          borderRadius: '8px',
-          border: '1px solid #333'
-        }}>
-          <div style={{ fontSize: '14px', color: '#888', marginBottom: '8px' }}>
-            {currentPlayer === 'w' ? 'White to play' : 'Black to play'}
-          </div>
-          <div style={{ fontSize: '16px', fontWeight: '500' }}>
-            Status: Active
-          </div>
-          <div style={{ fontSize: '14px', color: '#888', marginTop: '4px' }}>
-            Move: {moveHistory.length + 1}
-          </div>
-        </div>
+            pieceComponents.wB = ({ size = 40 }) => (
+              React.createElement('svg', { width: size, height: size, viewBox: "0 0 64 64" },
+                React.createElement('circle', { cx: "32", cy: "12", r: "4", fill: "#FFFFFF" }),
+                React.createElement('path', { d: "M28 16 Q32 8 36 16 Q40 24 38 32 Q36 40 32 44 Q28 40 26 32 Q24 24 28 16", fill: "#FFFFFF" }),
+                React.createElement('rect', { x: "30", y: "20", width: "4", height: "8", fill: "#333" }),
+                React.createElement('rect', { x: "24", y: "44", width: "16", height: "4", fill: "#FFFFFF" }),
+                React.createElement('rect', { x: "20", y: "48", width: "24", height: "4", fill: "#FFFFFF" })
+              )
+            );
 
-        <div style={{
-          display: 'flex',
-          gap: '8px',
-          flexWrap: 'wrap'
-        }}>
-          <button
-            onClick={flipBoard}
-            style={{
-              backgroundColor: '#333',
-              color: '#fff',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '14px'
-            }}
-          >
-            Flip Board
-          </button>
-          <button
-            onClick={resetGame}
-            style={{
-              backgroundColor: '#555',
-              color: '#fff',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '14px'
-            }}
-          >
-            Reset Game
-          </button>
-        </div>
+            pieceComponents.wQ = ({ size = 40 }) => (
+              React.createElement('svg', { width: size, height: size, viewBox: "0 0 64 64" },
+                React.createElement('circle', { cx: "20", cy: "16", r: "3", fill: "#FFFFFF" }),
+                React.createElement('circle', { cx: "28", cy: "12", r: "3", fill: "#FFFFFF" }),
+                React.createElement('circle', { cx: "32", cy: "8", r: "4", fill: "#FFFFFF" }),
+                React.createElement('circle', { cx: "36", cy: "12", r: "3", fill: "#FFFFFF" }),
+                React.createElement('circle', { cx: "44", cy: "16", r: "3", fill: "#FFFFFF" }),
+                React.createElement('path', { d: "M18 18 L46 18 L42 40 L22 40 Z", fill: "#FFFFFF" }),
+                React.createElement('rect', { x: "20", y: "40", width: "24", height: "4", fill: "#FFFFFF" }),
+                React.createElement('rect', { x: "16", y: "44", width: "32", height: "6", fill: "#FFFFFF" })
+              )
+            );
 
-        {/* Board Style Selector */}
-        <div style={{
-          backgroundColor: '#1a1a1a',
-          padding: '16px',
-          borderRadius: '8px',
-          border: '1px solid #333'
-        }}>
-          <div style={{ fontSize: '14px', color: '#888', marginBottom: '12px' }}>Board Style</div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {['hyperion', 'carbon', 'classic'].map(style => (
-              <button
-                key={style}
-                onClick={() => setBoardStyle(style)}
-                style={{
-                  backgroundColor: boardStyle === style ? '#555' : '#333',
-                  color: '#fff',
-                  border: 'none',
-                  padding: '6px 12px',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  textTransform: 'capitalize'
-                }}
-              >
-                {style}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+            pieceComponents.wK = ({ size = 40 }) => (
+              React.createElement('svg', { width: size, height: size, viewBox: "0 0 64 64" },
+                React.createElement('rect', { x: "30", y: "8", width: "4", height: "8", fill: "#FFFFFF" }),
+                React.createElement('rect', { x: "26", y: "12", width: "12", height: "4", fill: "#FFFFFF" }),
+                React.createElement('path', { d: "M24 16 Q32 12 40 16 Q42 24 40 32 Q36 40 32 42 Q28 40 24 32 Q22 24 24 16", fill: "#FFFFFF" }),
+                React.createElement('rect', { x: "28", y: "42", width: "8", height: "4", fill: "#FFFFFF" }),
+                React.createElement('rect', { x: "20", y: "46", width: "24", height: "6", fill: "#FFFFFF" })
+              )
+            );
 
-      {/* Chess Board */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center'
-      }}>
-        {renderBoard()}
-      </div>
+            // Black pieces
+            pieceComponents.bP = ({ size = 40 }) => (
+              React.createElement('svg', { width: size, height: size, viewBox: "0 0 64 64" },
+                React.createElement('circle', { cx: "32", cy: "16", r: "8", fill: "#1a1a1a" }),
+                React.createElement('rect', { x: "28", y: "24", width: "8", height: "4", fill: "#1a1a1a" }),
+                React.createElement('path', { d: "M24 28 L40 28 L38 48 L26 48 Z", fill: "#1a1a1a" }),
+                React.createElement('rect', { x: "24", y: "48", width: "16", height: "4", fill: "#1a1a1a" })
+              )
+            );
 
-      {/* Analysis Panel */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px'
-      }}>
-        {/* Collapse Analysis */}
-        <div style={{
-          backgroundColor: '#1a1a1a',
-          padding: '16px',
-          borderRadius: '8px',
-          border: '1px solid #333'
-        }}>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px',
-            marginBottom: '12px'
-          }}>
-            <span style={{ fontSize: '20px' }}>⏳</span>
-            <span style={{ fontSize: '14px', fontWeight: '500' }}>Collapse Trigger %</span>
-          </div>
-          <div style={{ 
-            fontSize: '16px', 
-            color: '#888',
-            textAlign: 'center'
-          }}>
-            No collapse detected
-          </div>
-        </div>
+            pieceComponents.bR = ({ size = 40 }) => (
+              React.createElement('svg', { width: size, height: size, viewBox: "0 0 64 64" },
+                React.createElement('rect', { x: "20", y: "8", width: "6", height: "8", fill: "#1a1a1a" }),
+                React.createElement('rect', { x: "29", y: "8", width: "6", height: "8", fill: "#1a1a1a" }),
+                React.createElement('rect', { x: "38", y: "8", width: "6", height: "8", fill: "#1a1a1a" }),
+                React.createElement('rect', { x: "18", y: "16", width: "28", height: "6", fill: "#1a1a1a" }),
+                React.createElement('rect', { x: "20", y: "22", width: "24", height: "26", fill: "#1a1a1a" }),
+                React.createElement('rect', { x: "16", y: "48", width: "32", height: "6", fill: "#1a1a1a" })
+              )
+            );
 
-        {/* Move History */}
-        <div style={{
-          backgroundColor: '#1a1a1a',
-          padding: '16px',
-          borderRadius: '8px',
-          border: '1px solid #333',
-          flex: 1
-        }}>
-          <div style={{ 
-            fontSize: '14px', 
-            fontWeight: '500',
-            marginBottom: '12px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <span>Move History</span>
-            <span style={{ fontSize: '12px', color: '#888' }}>
-              move {moveHistory.length}
-            </span>
-          </div>
-          
-          <div style={{
-            maxHeight: '300px',
-            overflowY: 'auto',
-            fontSize: '14px'
-          }}>
-            {formatMoveHistory().map((move, index) => (
-              <div key={index} style={{
+            pieceComponents.bN = ({ size = 40 }) => (
+              React.createElement('svg', { width: size, height: size, viewBox: "0 0 64 64" },
+                React.createElement('path', { d: "M20 48 Q20 32 28 24 Q32 20 36 20 Q40 16 44 20 Q48 24 46 28 Q44 32 40 36 Q36 40 32 44 Q28 48 20 48", fill: "#1a1a1a" }),
+                React.createElement('circle', { cx: "38", cy: "26", r: "2", fill: "#ccc" }),
+                React.createElement('path', { d: "M32 18 L36 14 L40 16 L38 20", fill: "#1a1a1a" }),
+                React.createElement('rect', { x: "18", y: "48", width: "28", height: "4", fill: "#1a1a1a" })
+              )
+            );
+
+            pieceComponents.bB = ({ size = 40 }) => (
+              React.createElement('svg', { width: size, height: size, viewBox: "0 0 64 64" },
+                React.createElement('circle', { cx: "32", cy: "12", r: "4", fill: "#1a1a1a" }),
+                React.createElement('path', { d: "M28 16 Q32 8 36 16 Q40 24 38 32 Q36 40 32 44 Q28 40 26 32 Q24 24 28 16", fill: "#1a1a1a" }),
+                React.createElement('rect', { x: "30", y: "20", width: "4", height: "8", fill: "#ccc" }),
+                React.createElement('rect', { x: "24", y: "44", width: "16", height: "4", fill: "#1a1a1a" }),
+                React.createElement('rect', { x: "20", y: "48", width: "24", height: "4", fill: "#1a1a1a" })
+              )
+            );
+
+            pieceComponents.bQ = ({ size = 40 }) => (
+              React.createElement('svg', { width: size, height: size, viewBox: "0 0 64 64" },
+                React.createElement('circle', { cx: "20", cy: "16", r: "3", fill: "#1a1a1a" }),
+                React.createElement('circle', { cx: "28", cy: "12", r: "3", fill: "#1a1a1a" }),
+                React.createElement('circle', { cx: "32", cy: "8", r: "4", fill: "#1a1a1a" }),
+                React.createElement('circle', { cx: "36", cy: "12", r: "3", fill: "#1a1a1a" }),
+                React.createElement('circle', { cx: "44", cy: "16", r: "3", fill: "#1a1a1a" }),
+                React.createElement('path', { d: "M18 18 L46 18 L42 40 L22 40 Z", fill: "#1a1a1a" }),
+                React.createElement('rect', { x: "20", y: "40", width: "24", height: "4", fill: "#1a1a1a" }),
+                React.createElement('rect', { x: "16", y: "44", width: "32", height: "6", fill: "#1a1a1a" })
+              )
+            );
+
+            pieceComponents.bK = ({ size = 40 }) => (
+              React.createElement('svg', { width: size, height: size, viewBox: "0 0 64 64" },
+                React.createElement('rect', { x: "30", y: "8", width: "4", height: "8", fill: "#1a1a1a" }),
+                React.createElement('rect', { x: "26", y: "12", width: "12", height: "4", fill: "#1a1a1a" }),
+                React.createElement('path', { d: "M24 16 Q32 12 40 16 Q42 24 40 32 Q36 40 32 42 Q28 40 24 32 Q22 24 24 16", fill: "#1a1a1a" }),
+                React.createElement('rect', { x: "28", y: "42", width: "8", height: "4", fill: "#1a1a1a" }),
+                React.createElement('rect', { x: "20", y: "46", width: "24", height: "6", fill: "#1a1a1a" })
+              )
+            );
+
+            return pieceComponents;
+          }, []);
+
+          // Chess move validation logic
+          const isValidMove = useCallback((fromRow, fromCol, toRow, toCol, piece, board) => {
+            if (toRow < 0 || toRow > 7 || toCol < 0 || toCol > 7) return false;
+            
+            const targetPiece = board[toRow][toCol];
+            if (targetPiece && targetPiece[0] === piece[0]) return false; // Can't capture own piece
+            
+            const pieceType = piece[1];
+            const color = piece[0];
+            const rowDiff = Math.abs(toRow - fromRow);
+            const colDiff = Math.abs(toCol - fromCol);
+            
+            switch (pieceType) {
+              case 'P': // Pawn
+                const direction = color === 'w' ? -1 : 1;
+                const startRow = color === 'w' ? 6 : 1;
+                
+                if (fromCol === toCol && !targetPiece) {
+                  if (toRow === fromRow + direction) return true;
+                  if (fromRow === startRow && toRow === fromRow + 2 * direction) return true;
+                }
+                if (colDiff === 1 && toRow === fromRow + direction && targetPiece) return true;
+                return false;
+                
+              case 'R': // Rook
+                if (fromRow === toRow || fromCol === toCol) {
+                  return isPathClear(fromRow, fromCol, toRow, toCol, board);
+                }
+                return false;
+                
+              case 'N': // Knight
+                return (rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2);
+                
+              case 'B': // Bishop
+                if (rowDiff === colDiff) {
+                  return isPathClear(fromRow, fromCol, toRow, toCol, board);
+                }
+                return false;
+                
+              case 'Q': // Queen
+                if (fromRow === toRow || fromCol === toCol || rowDiff === colDiff) {
+                  return isPathClear(fromRow, fromCol, toRow, toCol, board);
+                }
+                return false;
+                
+              case 'K': // King
+                return rowDiff <= 1 && colDiff <= 1;
+                
+              default:
+                return false;
+            }
+          }, []);
+
+          const isPathClear = (fromRow, fromCol, toRow, toCol, board) => {
+            const rowStep = toRow > fromRow ? 1 : toRow < fromRow ? -1 : 0;
+            const colStep = toCol > fromCol ? 1 : toCol < fromCol ? -1 : 0;
+            
+            let row = fromRow + rowStep;
+            let col = fromCol + colStep;
+            
+            while (row !== toRow || col !== toCol) {
+              if (board[row][col]) return false;
+              row += rowStep;
+              col += colStep;
+            }
+            
+            return true;
+          };
+
+          const getValidMovesForPiece = useCallback((row, col, board) => {
+            const piece = board[row][col];
+            if (!piece || piece[0] !== currentPlayer) return [];
+            
+            const moves = [];
+            for (let toRow = 0; toRow < 8; toRow++) {
+              for (let toCol = 0; toCol < 8; toCol++) {
+                if (isValidMove(row, col, toRow, toCol, piece, board)) {
+                  moves.push([toRow, toCol]);
+                }
+              }
+            }
+            return moves;
+          }, [currentPlayer, isValidMove]);
+
+          const handleSquareClick = useCallback((row, col) => {
+            if (selectedSquare) {
+              const [selectedRow, selectedCol] = selectedSquare;
+              const piece = board[selectedRow][selectedCol];
+              
+              if (piece && isValidMove(selectedRow, selectedCol, row, col, piece, board)) {
+                // Make the move
+                const newBoard = board.map(r => [...r]);
+                const capturedPiece = newBoard[row][col];
+                newBoard[row][col] = newBoard[selectedRow][selectedCol];
+                newBoard[selectedRow][selectedCol] = null;
+                
+                setBoard(newBoard);
+                setCurrentPlayer(currentPlayer === 'w' ? 'b' : 'w');
+                setMoveHistory(prev => [...prev, {
+                  from: `${String.fromCharCode(97 + selectedCol)}${8 - selectedRow}`,
+                  to: `${String.fromCharCode(97 + col)}${8 - row}`,
+                  piece: piece[1],
+                  captured: capturedPiece
+                }]);
+              }
+              
+              setSelectedSquare(null);
+              setValidMoves([]);
+            } else {
+              const piece = board[row][col];
+              if (piece && piece[0] === currentPlayer) {
+                setSelectedSquare([row, col]);
+                setValidMoves(getValidMovesForPiece(row, col, board));
+              }
+            }
+          }, [selectedSquare, board, currentPlayer, isValidMove, getValidMovesForPiece]);
+
+          const boardStyles = {
+            hyperion: {
+              light: '#2a2a2a',
+              dark: '#1a1a1a'
+            },
+            carbon: {
+              light: '#3a3a3a',
+              dark: '#2a2a2a'
+            },
+            classic: {
+              light: '#f0d9b5',
+              dark: '#b58863'
+            }
+          };
+
+          const flipBoard = () => {
+            setBoardOrientation(boardOrientation === 'white' ? 'black' : 'white');
+          };
+
+          const resetGame = () => {
+            setBoard(initialBoard);
+            setCurrentPlayer('w');
+            setSelectedSquare(null);
+            setMoveHistory([]);
+            setValidMoves([]);
+          };
+
+          const renderBoard = () => {
+            const displayBoard = boardOrientation === 'white' ? board : [...board].reverse().map(row => [...row].reverse());
+            
+            return React.createElement('div', {
+              style: {
+                display: 'grid',
+                gridTemplateColumns: 'repeat(8, 1fr)',
+                gridTemplateRows: 'repeat(8, 1fr)',
+                width: '500px',
+                height: '500px',
+                border: '2px solid #333',
+                borderRadius: '8px',
+                overflow: 'hidden'
+              }
+            }, 
+            displayBoard.map((row, rowIndex) =>
+              row.map((piece, colIndex) => {
+                const actualRow = boardOrientation === 'white' ? rowIndex : 7 - rowIndex;
+                const actualCol = boardOrientation === 'white' ? colIndex : 7 - colIndex;
+                const isLight = (actualRow + actualCol) % 2 === 0;
+                const isSelected = selectedSquare && selectedSquare[0] === actualRow && selectedSquare[1] === actualCol;
+                const isValidMove = validMoves.some(([r, c]) => r === actualRow && c === actualCol);
+                
+                return React.createElement('div', {
+                  key: `${actualRow}-${actualCol}`,
+                  onClick: () => handleSquareClick(actualRow, actualCol),
+                  style: {
+                    backgroundColor: isSelected ? '#555' : isLight ? boardStyles[boardStyle].light : boardStyles[boardStyle].dark,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    border: isValidMove ? '2px solid #0066cc' : 'none'
+                  }
+                }, [
+                  piece && customPieces[piece] && customPieces[piece]({ size: 50 }),
+                  isValidMove && !piece && React.createElement('div', {
+                    style: {
+                      width: '20px',
+                      height: '20px',
+                      backgroundColor: '#0066cc',
+                      borderRadius: '50%',
+                      opacity: 0.7
+                    }
+                  })
+                ]);
+              })
+            ));
+          };
+
+          const formatMoveHistory = () => {
+            const moves = [];
+            for (let i = 0; i < moveHistory.length; i += 2) {
+              const moveNumber = Math.floor(i / 2) + 1;
+              const whiteMove = moveHistory[i] ? `${moveHistory[i].piece}${moveHistory[i].to}` : '';
+              const blackMove = moveHistory[i + 1] ? `${moveHistory[i + 1].piece}${moveHistory[i + 1].to}` : '';
+              moves.push({ moveNumber, white: whiteMove, black: blackMove });
+            }
+            return moves;
+          };
+
+          return React.createElement('div', {
+            style: {
+              backgroundColor: '#0a0a0a',
+              color: '#ffffff',
+              minHeight: '100vh',
+              fontFamily: 'Inter, system-ui, sans-serif',
+              display: 'grid',
+              gridTemplateColumns: '1fr auto 300px',
+              gap: '24px',
+              padding: '24px'
+            }
+          }, [
+            // Header
+            React.createElement('div', {
+              key: 'header',
+              style: {
+                gridColumn: '1 / -1',
                 display: 'flex',
-                gap: '12px',
-                padding: '4px 0',
-                borderBottom: '1px solid #333'
-              }}>
-                <span style={{ color: '#888', minWidth: '20px' }}>
-                  {move.moveNumber}.
-                </span>
-                <span style={{ minWidth: '60px', color: '#fff' }}>
-                  {move.white}
-                </span>
-                <span style={{ color: '#ccc' }}>
-                  {move.black}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                borderBottom: '1px solid #333',
+                paddingBottom: '16px',
+                marginBottom: '24px'
+              }
+            }, 
+              React.createElement('div', {
+                style: { display: 'flex', alignItems: 'center', gap: '16px' }
+              }, [
+                React.createElement('div', {
+                  key: 'title',
+                  style: { fontSize: '24px', fontWeight: '600' }
+                }, '🏇 HYPERION IX'),
+                React.createElement('div', {
+                  key: 'nav',
+                  style: {
+                    display: 'flex',
+                    gap: '12px',
+                    fontSize: '14px',
+                    color: '#888'
+                  }
+                }, [
+                  React.createElement('span', { key: 'c1' }, 'culmination'),
+                  React.createElement('span', { key: 'c2' }, 'collapse'),
+                  React.createElement('span', { key: 'c3' }, 'entropy')
+                ])
+              ])
+            ),
+            
+            // Game Info
+            React.createElement('div', {
+              key: 'gameinfo',
+              style: {
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px'
+              }
+            }, [
+              React.createElement('div', {
+                key: 'status',
+                style: {
+                  backgroundColor: '#1a1a1a',
+                  padding: '16px',
+                  borderRadius: '8px',
+                  border: '1px solid #333'
+                }
+              }, [
+                React.createElement('div', {
+                  key: 'player',
+                  style: { fontSize: '14px', color: '#888', marginBottom: '8px' }
+                }, currentPlayer === 'w' ? 'White to play' : 'Black to play'),
+                React.createElement('div', {
+                  key: 'gamestat',
+                  style: { fontSize: '16px', fontWeight: '500' }
+                }, 'Status: Active'),
+                React.createElement('div', {
+                  key: 'movenum',
+                  style: { fontSize: '14px', color: '#888', marginTop: '4px' }
+                }, `Move: ${moveHistory.length + 1}`)
+              ]),
 
-        {/* Game Analysis */}
-        <div style={{
-          backgroundColor: '#1a1a1a',
-          padding: '16px',
-          borderRadius: '8px',
-          border: '1px solid #333'
-        }}>
-          <div style={{ fontSize: '14px', fontWeight: '500', marginBottom: '12px' }}>
-            Analysis
-          </div>
-          <div style={{ fontSize: '12px', color: '#888' }}>
-            <div>Material: Equal</div>
-            <div>Position: Balanced</div>
-            <div>Safety: Secure</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+              React.createElement('div', {
+                key: 'buttons',
+                style: {
+                  display: 'flex',
+                  gap: '8px',
+                  flexWrap: 'wrap'
+                }
+              }, [
+                React.createElement('button', {
+                  key: 'flip',
+                  onClick: flipBoard,
+                  style: {
+                    backgroundColor: '#333',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '8px 16px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }
+                }, 'Flip Board'),
+                React.createElement('button', {
+                  key: 'reset',
+                  onClick: resetGame,
+                  style: {
+                    backgroundColor: '#555',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '8px 16px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }
+                }, 'Reset Game')
+              ]),
 
-export default HyperionChess;
+              React.createElement('div', {
+                key: 'styles',
+                style: {
+                  backgroundColor: '#1a1a1a',
+                  padding: '16px',
+                  borderRadius: '8px',
+                  border: '1px solid #333'
+                }
+              }, [
+                React.createElement('div', {
+                  key: 'styletitle',
+                  style: { fontSize: '14px', color: '#888', marginBottom: '12px' }
+                }, 'Board Style'),
+                React.createElement('div', {
+                  key: 'stylebuttons',
+                  style: { display: 'flex', gap: '8px' }
+                }, ['hyperion', 'carbon', 'classic'].map(style =>
+                  React.createElement('button', {
+                    key: style,
+                    onClick: () => setBoardStyle(style),
+                    style: {
+                      backgroundColor: boardStyle === style ? '#555' : '#333',
+                      color: '#fff',
+                      border: 'none',
+                      padding: '6px 12px',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      textTransform: 'capitalize'
+                    }
+                  }, style)
+                ))
+              ])
+            ]),
+
+            // Chess Board
+            React.createElement('div', {
+              key: 'boardcontainer',
+              style: {
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center'
+              }
+            }, renderBoard()),
+
+            // Analysis Panel
+            React.createElement('div', {
+              key: 'analysis',
+              style: {
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px'
+              }
+            }, [
+              // Collapse Analysis
+              React.createElement('div', {
+                key: 'collapse',
+                style: {
+                  backgroundColor: '#1a1a1a',
+                  padding: '16px',
+                  borderRadius: '8px',
+                  border: '1px solid #333'
+                }
+              }, [
+                React.createElement('div', {
+                  key: 'collapsetitle',
+                  style: { 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '8px',
+                    marginBottom: '12px'
+                  }
+                }, [
+                  React.createElement('span', { key: 'icon', style: { fontSize: '20px' } }, '⏳'),
+                  React.createElement('span', { key: 'text', style: { fontSize: '14px', fontWeight: '500' } }, 'Collapse Trigger %')
+                ]),
+                React.createElement('div', {
+                  key: 'collapsetext',
+                  style: { 
+                    fontSize: '16px', 
+                    color: '#888',
+                    textAlign: 'center'
+                  }
+                }, 'No collapse detected')
+              ]),
+
+              // Move History
+              React.createElement('div', {
+                key: 'history',
+                style: {
+                  backgroundColor: '#1a1a1a',
+                  padding: '16px',
+                  borderRadius: '8px',
+                  border: '1px solid #333',
+                  flex: 1
+                }
+              }, [
+                React.createElement('div', {
+                  key: 'historytitle',
+                  style: { 
+                    fontSize: '14px', 
+                    fontWeight: '500',
+                    marginBottom: '12px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }
+                }, [
+                  React.createElement('span', { key: 'title' }, 'Move History'),
+                  React.createElement('span', {
+                    key: 'count',
+                    style: { fontSize: '12px', color: '#888' }
+                  }, `move ${moveHistory.length}`)
+                ]),
+                
+                React.createElement('div', {
+                  key: 'historylist',
+                  style: {
+                    maxHeight: '300px',
+                    overflowY: 'auto',
+                    fontSize: '14px'
+                  }
+                }, formatMoveHistory().map((move, index) =>
+                  React.createElement('div', {
+                    key: index,
+                    style: {
+                      display: 'flex',
+                      gap: '12px',
+                      padding: '4px 0',
+                      borderBottom: '1px solid #333'
+                    }
+                  }, [
+                    React.createElement('span', {
+                      key: 'num',
+                      style: { color: '#888', minWidth: '20px' }
+                    }, `${move.moveNumber}.`),
+                    React.createElement('span', {
+                      key: 'white',
+                      style: { minWidth: '60px', color: '#fff' }
+                    }, move.white),
+                    React.createElement('span', {
+                      key: 'black',
+                      style: { color: '#ccc' }
+                    }, move.black)
+                  ])
+                ))
+              ]),
+
+              // Game Analysis
+              React.createElement('div', {
+                key: 'gameanalysis',
+                style: {
+                  backgroundColor: '#1a1a1a',
+                  padding: '16px',
+                  borderRadius: '8px',
+                  border: '1px solid #333'
+                }
+              }, [
+                React.createElement('div', {
+                  key: 'analysistitle',
+                  style: { fontSize: '14px', fontWeight: '500', marginBottom: '12px' }
+                }, 'Analysis'),
+                React.createElement('div', {
+                  key: 'analysisinfo',
+                  style: { fontSize: '12px', color: '#888' }
+                }, [
+                  React.createElement('div', { key: 'material' }, 'Material: Equal'),
+                  React.createElement('div', { key: 'position' }, 'Position: Balanced'),
+                  React.createElement('div', { key: 'safety' }, 'Safety: Secure')
+                ])
+              ])
+            ])
+          ]);
+        };
+
+        ReactDOM.render(React.createElement(HyperionChess), document.getElementById('root'));
+    </script>
+</body>
+</html>
